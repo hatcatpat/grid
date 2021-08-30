@@ -1,3 +1,5 @@
+#define _GNU_SOURCE
+
 #include <SDL2/SDL.h>
 #include <SDL2/SDL2_gfxPrimitives.h>
 #include <SDL2/SDL_image.h>
@@ -33,23 +35,25 @@ void SDL_SetRenderDrawColorFromColor(SDL_Renderer *ren, SDL_Color *col) {
 
 //--------------------------------------------------------
 
-#define NUM_COLORS 16
+#define MARGIN_SIZE 16
+#define MAX_COLORS 16
 #define FONT_SIZE_X 16
 #define FONT_SIZE_Y 16
 
 SDL_Window *win;
 SDL_Renderer *ren;
 SDL_Texture *font_tex, *grid_tex;
+const Uint8 *kbd;
 byte *grid;
 int width = 32, height = 10, screen_width = 32 * 20, screen_height = 32 * 20;
 bool quit_flag = false;
+bool ignore_zero_flag = false;
 float zoom = 20;
-char *filename = NULL;
-char *font = "img/font.png";
-const Uint8 *kbd;
+char *filename = "output/unnamed.grd", *font = "fonts/basic.png",
+     *palette = "palettes/basic";
 enum { MODE_HEX, MODE_COL, MODE_NUM } mode = MODE_COL;
-SDL_Color colors[NUM_COLORS] = {
-    {0, 0, 0}, {0xff, 0xff, 0xff}, {0xff, 0, 0}, {0, 0xff, 0}, {0, 0, 0xff}};
+byte num_colors = 2;
+SDL_Color colors[MAX_COLORS] = {{0, 0, 0}, {0xff, 0xff, 0xff}};
 struct {
   int x, y, w, h;
   int sx, sy, sw, sh;
@@ -67,7 +71,7 @@ struct {
 //--------------------------------------------------------
 int init();
 int quit();
-void parse_cmd(int argc, char **argv);
+void parse_args(int argc, char **argv);
 void update();
 void draw();
 void resize_screen(int w, int h);
@@ -91,5 +95,7 @@ void draw_cursor();
 void draw_grid();
 
 // file
+void load_font();
 void save_as_grd();
 void load_from_grd();
+void load_palette();

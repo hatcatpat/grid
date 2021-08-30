@@ -15,24 +15,6 @@ int init() {
     return 1;
   }
 
-  ren = SDL_CreateRenderer(win, -1, 0);
-  if (!ren) {
-    printf("[error] create_renderer failed: %s\n", SDL_GetError());
-    return 1;
-  }
-
-  font_tex = IMG_LoadTexture(ren, font);
-  if (!font_tex) {
-    printf("[error] LoadTexture failed (font): %s\n", SDL_GetError());
-    return 1;
-  }
-
-  kbd = SDL_GetKeyboardState(NULL);
-
-  resize_grid(width, height);
-
-  load_from_grd();
-
   if (filename) {
     char *fmt = "grid - %s";
     size_t filename_len = strlen(filename);
@@ -41,6 +23,24 @@ int init() {
     sprintf(str, fmt, filename);
     SDL_SetWindowTitle(win, str);
   }
+
+  ren = SDL_CreateRenderer(win, -1, 0);
+  if (!ren) {
+    printf("[error] create_renderer failed: %s\n", SDL_GetError());
+    return 1;
+  }
+
+  kbd = SDL_GetKeyboardState(NULL);
+
+  zoom = min(screen_width / width, screen_height / height) * 0.75;
+
+  resize_grid(width, height);
+
+  load_font();
+
+  load_from_grd();
+
+  load_palette();
 
   return 0;
 }
@@ -57,14 +57,11 @@ int quit() {
 }
 
 //--------------------------------------------------------
-void parse_cmd(int argc, char **argv) {
+void parse_args(int argc, char **argv) {
   int opt = -1;
-  while ((opt = getopt(argc, argv, "f:w:h:")) != -1) {
-    switch (opt) {
 
-    case 'f':
-      filename = optarg;
-      break;
+  while ((opt = getopt(argc, argv, "w:h:o:p:f:z")) != -1) {
+    switch (opt) {
 
     case 'w':
       width = atoi(optarg);
@@ -78,11 +75,30 @@ void parse_cmd(int argc, char **argv) {
         height = 1;
       break;
 
+    case 'o':
+      filename = optarg;
+      break;
+
+    case 'p':
+      palette = optarg;
+      break;
+
+    case 'f':
+      font = optarg;
+      break;
+
+    case 'z':
+      ignore_zero_flag = true;
+      break;
+
     default:
       printf("try:\n");
-      printf("\t-f filename: set [f]ile to open\n");
       printf("\t-w width: set [w]idth\n");
       printf("\t-h height: set [h]eight\n");
+      printf("\t-o filename: set file to [o]pen\n");
+      printf("\t-p palette: set [p]alette to use\n");
+      printf("\t-f font: set [f]ont to use\n");
+      printf("\t-z: don't draw [z]eros\n");
       printf("\n");
       break;
     }
@@ -125,6 +141,7 @@ void resize_screen(int w, int h) {}
 //--------------------------------------------------------
 void events() {
   SDL_Event evt;
+
   while (SDL_PollEvent(&evt)) {
     switch (evt.type) {
     case SDL_QUIT:
@@ -362,6 +379,38 @@ void cursor_move(int dx, int dy) {
     } else {
       grid_add(cursor.x, cursor.y, 1);
     }
+  } else if (kbd[SDL_SCANCODE_0]) {
+    cursor_fill(0);
+  } else if (kbd[SDL_SCANCODE_1]) {
+    cursor_fill(1);
+  } else if (kbd[SDL_SCANCODE_2]) {
+    cursor_fill(2);
+  } else if (kbd[SDL_SCANCODE_3]) {
+    cursor_fill(3);
+  } else if (kbd[SDL_SCANCODE_4]) {
+    cursor_fill(4);
+  } else if (kbd[SDL_SCANCODE_5]) {
+    cursor_fill(5);
+  } else if (kbd[SDL_SCANCODE_6]) {
+    cursor_fill(6);
+  } else if (kbd[SDL_SCANCODE_7]) {
+    cursor_fill(7);
+  } else if (kbd[SDL_SCANCODE_8]) {
+    cursor_fill(8);
+  } else if (kbd[SDL_SCANCODE_9]) {
+    cursor_fill(9);
+  } else if (kbd[SDL_SCANCODE_A]) {
+    cursor_fill(10);
+  } else if (kbd[SDL_SCANCODE_B]) {
+    cursor_fill(11);
+  } else if (kbd[SDL_SCANCODE_C]) {
+    cursor_fill(12);
+  } else if (kbd[SDL_SCANCODE_D]) {
+    cursor_fill(13);
+  } else if (kbd[SDL_SCANCODE_E]) {
+    cursor_fill(14);
+  } else if (kbd[SDL_SCANCODE_F]) {
+    cursor_fill(15);
   }
 }
 
@@ -379,13 +428,12 @@ void cursor_fill(byte v) {
 
 //--------------------------------------------------------
 void resize_grid(int w, int h) {
-  printf("resized %i %i \n", w, h);
-
   width = w > 0 ? w : 1;
   height = h > 0 ? h : 1;
 
   free(grid);
-  SDL_DestroyTexture(grid_tex);
+  if (grid_tex)
+    SDL_DestroyTexture(grid_tex);
 
   grid_tex =
       SDL_CreateTexture(ren, SDL_PIXELFORMAT_RGBA32, SDL_TEXTUREACCESS_TARGET,
@@ -461,7 +509,7 @@ void draw_col(int x, int y, byte i) {
                    .w = FONT_SIZE_X,
                    .h = FONT_SIZE_Y};
 
-  SDL_SetRenderDrawColorFromColor(ren, &colors[i % NUM_COLORS]);
+  SDL_SetRenderDrawColorFromColor(ren, &colors[i % num_colors]);
   SDL_RenderFillRect(ren, &rect);
 }
 
@@ -473,7 +521,11 @@ void draw_grid() {
 
       switch (mode) {
       case MODE_HEX:
-        draw_char(x, y, i);
+        if (i == 0 && ignore_zero_flag) {
+          draw_col(x, y, 0);
+        } else {
+          draw_char(x, y, i);
+        }
         break;
 
       case MODE_COL:
@@ -495,7 +547,7 @@ void draw_cursor() {
     break;
 
   case MODE_COL: {
-    SDL_Color *col = &colors[grid[cursor.x + cursor.y * width] % NUM_COLORS];
+    SDL_Color *col = &colors[grid[cursor.x + cursor.y * width] % num_colors];
     SDL_SetRenderDrawColor(ren, 0xff - col->r, 0xff - col->g, 0xff - col->b,
                            0xff);
   } break;
@@ -513,6 +565,18 @@ void draw_cursor() {
 
   draw_thick_rect(cursor.x * FONT_SIZE_X, cursor.y * FONT_SIZE_Y,
                   cursor.w * FONT_SIZE_X, cursor.h * FONT_SIZE_Y, 3);
+}
+
+//--------------------------------------------------------
+void load_font() {
+  if (font_tex)
+    SDL_DestroyTexture(font_tex);
+
+  font_tex = IMG_LoadTexture(ren, font);
+  if (!font_tex) {
+    printf("[error] LoadTexture failed (font): %s\n", SDL_GetError());
+    return;
+  }
 }
 
 //--------------------------------------------------------
@@ -539,9 +603,6 @@ void save_as_grd() {
 
 //--------------------------------------------------------
 void load_from_grd() {
-  if (!filename)
-    return;
-
   FILE *file = fopen(filename, "rb");
 
   if (file) {
@@ -568,12 +629,43 @@ void load_from_grd() {
 }
 
 //--------------------------------------------------------
+void load_palette() {
+  FILE *file = fopen(palette, "r");
+
+  if (file) {
+    char *line = NULL;
+    size_t len = 0;
+    ssize_t read;
+    byte i = 0;
+
+    while ((read = getline(&line, &len, file)) != -1) {
+      if (i > MAX_COLORS)
+        break;
+
+      Uint32 col = strtol(line, NULL, 16);
+      colors[i].r = (col >> 16) & 0xff;
+      colors[i].g = (col >> 8) & 0xff;
+      colors[i].b = col & 0xff;
+
+      ++i;
+    }
+
+    num_colors = i;
+
+    if (line)
+      free(line);
+  } else {
+    printf("[error] failed to open palette %s\n", palette);
+  }
+}
+
+//--------------------------------------------------------
 //--------------------------------------------------------
 //--------------------------------------------------------
 int main(int argc, char **argv) {
   srand(time(NULL));
 
-  parse_cmd(argc, argv);
+  parse_args(argc, argv);
 
   if (!init()) {
     while (!quit_flag) {
