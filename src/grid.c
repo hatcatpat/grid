@@ -60,16 +60,16 @@ int quit() {
 void parse_args(int argc, char **argv) {
   int opt = -1;
 
-  while ((opt = getopt(argc, argv, "w:h:o:p:f:z")) != -1) {
+  while ((opt = getopt(argc, argv, "W:H:o:p:f:zh")) != -1) {
     switch (opt) {
 
-    case 'w':
+    case 'W':
       width = atoi(optarg);
       if (width < 1)
         width = 1;
       break;
 
-    case 'h':
+    case 'H':
       height = atoi(optarg);
       if (height < 1)
         height = 1;
@@ -91,16 +91,33 @@ void parse_args(int argc, char **argv) {
       ignore_zero_flag = true;
       break;
 
-    default:
+    case 'h': {
+      printf("\n[hotkeys]\n");
+      printf("escape: quits program\n");
+      printf("left/right/up/down: move left/right/up/down\n");
+      printf("z: decrease value\n");
+      printf("x: increase value\n");
+      printf("0-9,A-F: set value\n");
+      printf("v: toggle select mode\n");
+      printf("i: zoom in\n");
+      printf("o: zoom out\n");
+      printf("m: toggle view mode\n");
+      printf("S: save as .grd\n");
+      printf("L: load from .grd\n");
+      printf("\n");
+    } break;
+
+    default: {
       printf("try:\n");
-      printf("\t-w width: set [w]idth\n");
-      printf("\t-h height: set [h]eight\n");
+      printf("\t-h: print [h]otkeys\n");
+      printf("\t-W width: set [W]idth\n");
+      printf("\t-H height: set [H]eight\n");
       printf("\t-o filename: set file to [o]pen\n");
       printf("\t-p palette: set [p]alette to use\n");
       printf("\t-f font: set [f]ont to use\n");
       printf("\t-z: don't draw [z]eros\n");
       printf("\n");
-      break;
+    } break;
     }
   }
 }
@@ -175,15 +192,13 @@ void keydown(SDL_KeyCode k) {
   } break;
 
   case 'i': {
-    zoom += 0.5;
-    if (zoom < 0.5)
-      zoom = 0.5;
+    zoom += 4;
   } break;
 
   case 'o': {
-    zoom -= 0.5;
-    if (zoom < 0.5)
-      zoom = 0.5;
+    zoom -= 4;
+    if (zoom < 4)
+      zoom = 4;
   } break;
 
   case SDLK_LEFT:
@@ -235,7 +250,7 @@ void keydown(SDL_KeyCode k) {
       save_as_grd();
   } break;
 
-  case 'p': {
+  case 'l': {
     if (SDL_GetModState() & KMOD_SHIFT)
       load_from_grd();
   } break;
