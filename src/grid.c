@@ -225,6 +225,7 @@ void keydown(SDL_KeyCode k) {
     } else {
       grid_add(cursor.x, cursor.y, -1);
     }
+    draw_key_held_flag = true;
   } break;
 
   case 'x': {
@@ -235,6 +236,7 @@ void keydown(SDL_KeyCode k) {
     } else {
       grid_add(cursor.x, cursor.y, 1);
     }
+    draw_key_held_flag = true;
   } break;
 
   case 'v': {
@@ -261,51 +263,67 @@ void keydown(SDL_KeyCode k) {
 
   case '0':
     cursor_fill(0);
+    draw_key_held_flag = true;
     break;
   case '1':
     cursor_fill(1);
+    draw_key_held_flag = true;
     break;
   case '2':
     cursor_fill(2);
+    draw_key_held_flag = true;
     break;
   case '3':
     cursor_fill(3);
+    draw_key_held_flag = true;
     break;
   case '4':
     cursor_fill(4);
+    draw_key_held_flag = true;
     break;
   case '5':
     cursor_fill(5);
+    draw_key_held_flag = true;
     break;
   case '6':
     cursor_fill(6);
+    draw_key_held_flag = true;
     break;
   case '7':
     cursor_fill(7);
+    draw_key_held_flag = true;
     break;
   case '8':
     cursor_fill(8);
+    draw_key_held_flag = true;
     break;
   case '9':
     cursor_fill(9);
+    draw_key_held_flag = true;
     break;
   case 'a':
     cursor_fill(10);
+    draw_key_held_flag = true;
     break;
   case 'b':
     cursor_fill(11);
+    draw_key_held_flag = true;
     break;
   case 'c':
     cursor_fill(12);
+    draw_key_held_flag = true;
     break;
   case 'd':
     cursor_fill(13);
+    draw_key_held_flag = true;
     break;
   case 'e':
     cursor_fill(14);
+    draw_key_held_flag = true;
     break;
   case 'f':
     cursor_fill(15);
+    draw_key_held_flag = true;
     break;
 
   default:
@@ -314,7 +332,34 @@ void keydown(SDL_KeyCode k) {
 }
 
 //--------------------------------------------------------
-void keyup(SDL_KeyCode k) {}
+void keyup(SDL_KeyCode k) {
+  switch (k) {
+
+  case 'z':
+  case 'x':
+  case '0':
+  case '1':
+  case '2':
+  case '3':
+  case '4':
+  case '5':
+  case '6':
+  case '7':
+  case '8':
+  case '9':
+  case 'a':
+  case 'b':
+  case 'c':
+  case 'd':
+  case 'e':
+  case 'f':
+    draw_key_held_flag = false;
+    break;
+
+  default:
+    break;
+  }
+}
 
 //--------------------------------------------------------
 void cursor_move(int dx, int dy) {
@@ -377,6 +422,9 @@ void cursor_move(int dx, int dy) {
         cursor.y = height - 1;
     }
   }
+
+  if (!draw_key_held_flag)
+    return;
 
   if (kbd[SDL_SCANCODE_Z]) {
     if (cursor.select_flag) {
@@ -535,6 +583,7 @@ void draw_grid() {
       byte i = grid[x + y * width];
 
       switch (mode) {
+
       case MODE_HEX:
         if (i == 0 && ignore_zero_flag) {
           draw_col(x, y, 0);
@@ -557,6 +606,7 @@ void draw_grid() {
 //--------------------------------------------------------
 void draw_cursor() {
   switch (mode) {
+
   case MODE_HEX:
     SDL_SetRenderDrawColor(ren, 0xff, 0xff, 0xff, 0xff);
     break;
@@ -579,7 +629,8 @@ void draw_cursor() {
   }
 
   draw_thick_rect(cursor.x * FONT_SIZE_X, cursor.y * FONT_SIZE_Y,
-                  cursor.w * FONT_SIZE_X, cursor.h * FONT_SIZE_Y, 3);
+                  cursor.w * FONT_SIZE_X, cursor.h * FONT_SIZE_Y,
+                  draw_key_held_flag ? 5 : 3);
 }
 
 //--------------------------------------------------------

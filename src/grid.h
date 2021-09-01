@@ -45,9 +45,10 @@ SDL_Renderer *ren;
 SDL_Texture *font_tex, *grid_tex;
 const Uint8 *kbd;
 byte *grid;
-int width = 32, height = 10, screen_width = 32 * 20, screen_height = 32 * 20;
+int width = 8, height = 8, screen_width = 32 * 20, screen_height = 32 * 20;
 bool quit_flag = false;
 bool ignore_zero_flag = false;
+bool draw_key_held_flag = false;
 float zoom = 20;
 char *filename = "output/unnamed.grd", *font = "fonts/basic.png",
      *palette = "palettes/basic";
